@@ -1,0 +1,28 @@
+spec:
+  inputs:
+    as-version:
+      description: "The ArchivesSpace version to deploy. Ex: v4.1.1"
+      regex: ^v[0-9]+\.[0-9]+\.[0-9]+$
+    conf-file:
+      default: ""
+      description: "The config.rb contents"
+    repo-dir:
+      default: "/home/deploy/findingaids/"
+      description: "Directory on the deploy server to sync the repo files to"
+    deploy-user:
+      default: "deploy"
+      description: "The user that will be used to connect to the deploy server with"
+    devel-server:
+      description: "Development server to deploy to"
+    devel-encoded-key:
+      description: "Base64 encoded private SSH key to connect to the devel deploy server with"
+    test-server:
+      description: "Test server to deploy to"
+    test-encoded-key:
+      description: "Base64 encoded private SSH key to connect to the test deploy server with"
+    prod-server:
+      description: "Prod server to deploy to"
+    prod-encoded-key:
+      description: "Base64 encoded private SSH key to connect to the prod deploy server with"
+---
+

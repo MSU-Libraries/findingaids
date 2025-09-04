@@ -1,0 +1,36 @@
+    <%= render partial: 'shared/search', locals: {
+      :search_url => "/search",
+      :title => t('archive._plural'),
+      :limit_options => [
+            ["#{t('actions.search')} #{t('search-limits.all')}",''],
+            [t('search-limit', :limit => t('search-limits.resources')),'resource'],
+            [t('search-limit', :limit => t('search-limits.digital')),'digital_object']
+          ],
+      :field_options => [
+            ["#{t('search_results.filter.fullrecord')}",''],
+            ["#{t('search_results.filter.title')}",'title'],
+            ["#{t('search_results.filter.creators')}",'creators_text'],
+            ["#{t('search_results.filter.subjects')}",'subjects_text'],
+            ["#{t('search_results.filter.notes')}", 'notes'],
+            ["#{t('search_results.filter.identifier')}", 'four_part_id']
+           ]
+    } %>
+    <div class="row no-gutters">
+      <div class="col-12 col-md-6">
+          <h2>About this Site</h2>
+          <p>This site includes finding aids from two repositories at Michigan State University Libraries: The <a href="https://lib.msu.edu/MurrayHongSPC/">Stephen O. Murray and Keelung Hong Special Collections</a>, and the <a href="https://lib.msu.edu/branches/ua/">University Archives and Historical Collections</a>. A finding aid provides information about an archival collection, including biographical or administrative history, scope of the collection, subjects, organization and arrangement, and an inventory of the series and/or folders in the collection.</p>
+    </div>
+    <div class="col-12 col-md-6">
+          <h2>Requesting Materials</h2>
+          <p>Collections are non-circulating and must be used in the Reading Room at the Main Library, which is currently open by appointment only. Requests for materials must be made no less than five (5) business days before your appointment.</p>
+          <p>To request materials from the University Archives and Historical Collections, email <a href="mailto:archives@msu.edu">archives@msu.edu</a> or call <a href="tel:517-355-2330">517-355-2330</a>. Appointment information is available at <a href="https://lib.msu.edu/branches/ua/appointments/">https://lib.msu.edu/branches/ua/appointments/</a>.</p>
+          <p>To request materials from The Stephen O. Murray and Keelung Hong Special Collections:</p>
+          <ul>
+              <li>Explore a collection using the COLLECTION ORGANIZATION menu on the right side of the page.</li>
+              <li>When you click on specific items of interest, the box number and folder number will be shown at upper left.</li>
+              <li>Go to the library catalog and search by collection title (not by title of the specific document you want)</li>
+              <li>Use the purple GET IT button to request the box you need. (The entire box will be delivered, so keep a record of which folder has the item you want to use.)</li>
+          </ul>
+          <p>To make an appointment at The Stephen O. Murray and Keelung Hong Special Collections, visit <a href="https://lib.msu.edu/MurrayHongSPC/appointments/">https://lib.msu.edu/MurrayHongSPC/appointments/</a>.</p>
+    </div>
+  </div>

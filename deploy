@@ -1,0 +1,465 @@
+#!/bin/bash
+
+SCRIPT_NAME="deploy"
+
+# Set defaults
+default_args() {
+    declare -g -A ARGS
+    ARGS[VERBOSE]=0
+    ARGS[DRYRUN]=0
+    ARGS[TARGET_DIR]=/home/deploy/archivesspace
+    ARGS[RESET_SOLR]=0
+    ARGS[SKIP_SETUP]=0
+    ARGS[AS_VERSION]="v${ARCHIVESSPACE_DOCKER_TAG}"
+}
+default_args
+
+# Script help text
+run_help() {
+    echo ""
+    echo "Usage: Deploy ArchivesSpace to the current host."
+    echo ""
+    echo "Examples: "
+    echo "   ${SCRIPT_NAME} --reset-solr -as-version v4.1.1"
+    echo "     Deploy v4.1.1 of ArchivesSpace, reseting the Solr index"
+    echo "   ${SCRIPT_NAME} -as-version v4.1.1"
+    echo "     Deploy v4.1.1 of ArchivesSpace, without reseting the Solr index"
+    echo "   ${SCRIPT_NAME} --target-dir /home/deploy/other"
+    echo "     Deploy ${ARGS[AS_VERSION]} of ArchivesSpace, to /home/deploy/other"
+    echo "   ${SCRIPT_NAME} --dry-run"
+    echo "     Do a dry run of the update to ${ARGS[AS_VERSION]} of ArchivesSpace"
+    echo "FLAGS:"
+    echo "  -n|--dry-run"
+    echo "      Does not perform any actions, prints output. Implies --verbose"
+    echo "  -v|--verbose"
+    echo "      Enabled increased log output"
+    echo "  -t|--target-dir"
+    echo "      Set the target deploy directory. Default: ${ARGS[TARGET_DIR]}"
+    echo "  -r|--reset-solr"
+    echo "      Reset the Solr index by clearing the volume"
+    echo "  -s|--skip-setup"
+    echo "      Skip the steps where it downloads AS and sets up --target-dir and only does the deploy"
+    echo "      and optionally the Solr reset if --reset-solr used."
+    echo "  -a|--as-version"
+    echo "      Set the version of ArchivesSpace to deploy. Default ${ARGS[AS_VERSION]}"
+}
+
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" || $1 == "help" ]]; then
+    run_help
+    exit 0
+fi
+
+# Parse command arguments
+parse_args() {
+    # Parse flag arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+        -h|--help)
+            run_help
+            exit 0;;
+        -a|--as-version)
+            ARGS[AS_VERSION]="$2"
+            shift; shift ;;
+        -t|--target-dir)
+            ARGS[TARGET_DIR]=$( readlink -f "$2" )
+            RC=$?
+            if [[ "$RC" -ne 0 || ! -d "${ARGS[TARGET_DIR]}" ]]; then
+                echo "ERROR: -t|--target-dir directory is not valid: $2"
+                exit 1
+            fi
+            shift; shift ;;
+        -r|--reset-solr)
+            ARGS[RESET_SOLR]=1
+            shift;;
+        -s|--skip-setup)
+            ARGS[SKIP_SETUP]=1
+            shift;;
+        -v|--verbose)
+            ARGS[VERBOSE]=1
+            shift;;
+        -n|--dry-run)
+            ARGS[VERBOSE]=1
+            ARGS[DRYRUN]=1
+            shift;;
+        *)
+            echo "ERROR: Unknown flag: $1"
+            exit 1
+        esac
+    done
+}
+
+
+# Print message if verbose is enabled
+verbose() {
+    if [[ "${ARGS[VERBOSE]}" -eq 1 ]]; then
+        _log "$1"
+    fi
+}
+
+# Print the message and exit
+die() {
+    _log "$1"
+    exit 1
+}
+
+# Log the provided message with the timestamp
+_log() {
+    LOG_TS=$(date +%Y-%m-%d\ %H:%M:%S)
+    if [[ "${ARGS[DRYRUN]}" -eq 1 ]]; then
+        MSG="[${LOG_TS}] (dryrun) $1"
+    else
+        MSG="[${LOG_TS}] $1"
+    fi
+    echo "${MSG}"
+}
+
+# Assert the AS version provided is a valid format
+assert_valid_as_version() {
+    if [[ ! "${ARGS[AS_VERSION]}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        die "ERROR: --as-version provided (${ARGS[AS_VERSION]}) does not match the pattern v#.#.#"
+    fi
+}
+
+# Assert that the required dependencies for this script are installed
+assert_dependencies_installed() {
+    if ! command -v rsync &> /dev/null; then
+        die "ERROR: rsync in not install."
+    fi
+    if ! command -v yq &> /dev/null; then
+        die "ERROR: yq not installed"
+    fi
+}
+
+# Assert that the target directory exists and is writable
+assert_target_dir_exists() {
+    # Create the directory if it doesn't exist
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if ! mkdir -p "${ARGS[TARGET_DIR]}"; then
+            die "ERROR: Could not create target directory: ${ARGS[TARGET_DIR]}"
+        fi
+    fi
+    # Ensure it is writable
+    if ! [ -w "${ARGS[TARGET_DIR]}" ]; then
+        die "ERROR: Target directory is not writable: ${ARGS[TARGET_DIR]}"
+    fi
+}
+
+# Download AS Docker asset from GitHub
+download_release() {
+    url="https://github.com/archivesspace/archivesspace/releases/download/${ARGS[AS_VERSION]}/archivesspace-docker-${ARGS[AS_VERSION]}.zip"
+    tmp="/tmp/${ARGS[AS_VERSION]}.zip"
+    verbose "Downloading $url to $tmp"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if ! curl --fail -L -o "$tmp" "$url"; then
+            die "ERROR: Failed to download release zip from: $url"
+        fi
+    fi
+}
+
+# Extract the zip files from the temp directory
+extract_release() {
+    tmp="/tmp/${ARGS[AS_VERSION]}.zip"
+    tmp_extract=$(mktemp -d)
+
+    verbose "Ensuring $tmp file exists"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if [ ! -f "$tmp" ]; then
+            die "ERROR: $tmp does not exist to extract"
+        fi
+    fi
+    verbose "Extracting $tmp to $tmp_extract"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if ! unzip -qo "$tmp" -d "$tmp_extract"; then
+            rm "$tmp"
+            rm -rf "$tmp_extract"
+            die "ERROR: Failed to extract $tmp to $tmp_extract"
+        fi
+    fi
+    verbose "Syncing the extracted files to ${ARGS[TARGET_DIR]}"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if [ ! -d "$tmp_extract/archivesspace" ]; then
+            rm "$tmp"
+            rm -rf "$tmp_extract"
+            die "ERROR: The 'archivesspace' subdirectory does not exist in the extracted files"
+        fi
+        if ! rsync -aiv "$tmp_extract/archivesspace/" "${ARGS[TARGET_DIR]}"/; then
+            rm "$tmp"
+            rm -rf "$tmp_extract"
+            die "ERROR: Failed to rsync $tmp_extract/archivesspace/ to ${ARGS[TARGET_DIR]}/"
+        fi
+    fi
+    verbose "Cleaning up temporary zip file"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        rm "$tmp"
+        rm -rf "$tmp_extract"
+    fi
+}
+
+# Clone or pull change to to a given repository
+#
+# Args:
+#   $1 (str): The URL of the Git repository
+#   $2 (str): The full path to the directory to clone it to (or pull)
+clone_or_pull() {
+    url=$1
+    dir=$2
+
+    if [ -d "$dir" ]; then
+        verbose "$url already cloned at $dir. Pulling latest changes"
+        if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+            if ! git -C "$dir" pull; then
+                die "ERROR: Failed to pull changes for $url at $dir"
+            fi
+        fi
+    else
+        verbose "Cloning $url to $dir"
+        if ! git clone "$url" "$dir"; then
+            die "ERROR: Failed to clone $url to $dir"
+        fi
+    fi
+}
+
+# Clone the required plugins into the plugins directory
+clone_plugins() {
+    verbose "Cloning Aeon Fulfillment Plugin"
+    clone_or_pull "https://github.com/AtlasSystems/ArchivesSpace-Aeon-Fulfillment-Plugin" "${ARGS[TARGET_DIR]}/plugins/aeon-fulfillment/"
+    verbose "Cloning Accession Slips Plugin"
+    clone_or_pull "https://github.com/MSU-Libraries/accession_slips.git" "${ARGS[TARGET_DIR]}/plugins/accession_slips/"
+}
+
+# Rsync the files from this repository to the target directory.
+# Only will include: ./config, ./plugins, ./proxy-config
+sync_files() {
+    cur_dir=$(dirname "$(readlink -f "$0")")
+    verbose "Syncing $cur_dir to ${ARGS[TARGET_DIR]}"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        if ! rsync -aiv --include='plugins/***' --include='config/***' --include='proxy-config/***' --exclude='*'  "$cur_dir"/ "${ARGS[TARGET_DIR]}"/; then
+            die "ERROR: Failed to rsync $cur_dir to ${ARGS[TARGET_DIR]}"
+        fi
+    fi
+}
+
+# Wait for the 'solr' and 'app' containers to stop.
+#
+# Args:
+#  $1 (str): Path to the docker-compose.yml file that defines the services
+wait_for_docker_containers_to_stop() {
+    local compose_file=$1
+    local timeout=60
+    local start_time
+    local containers_running=true
+    start_time=$(date +%s)
+
+    verbose "Waiting for 'solr' and 'app' containers to stop..."
+
+    while $containers_running && (( $(date +%s) - start_time < timeout )); do
+        # Check if the 'solr' or 'app' containers are still running.
+        if [ -z "$(docker compose -f "$compose_file" ps -q solr app)" ]; then
+            containers_running=false
+        else
+            verbose "Containers still stopping... waiting 5 seconds."
+            sleep 5
+        fi
+    done
+
+    if $containers_running; then
+        die "Error: Timeout reached. 'solr' or 'app' containers may still be running."
+    else
+        verbose "'solr' and 'app' containers have successfully stopped."
+    fi
+}
+
+
+# Wait for all the containers to be healthy that have a defined healthcheck.
+#
+# Args:
+#  $1 (str): Path to the docker-compose.yml file that defines the services
+wait_for_docker_containers_to_be_healthy() {
+    local compose_file=$1
+    local timeout=300 # 5 minutes
+    local start_time
+    local all_services
+    local services_to_check=""
+    local healthy_services
+    start_time=$(date +%s)
+
+    verbose "Identifying services with a healthcheck..."
+
+    # Get the list of all service names from the compose file
+    all_services=$(docker compose -f "$compose_file" config --services)
+    
+    if [ -z "$all_services" ]; then
+        die "ERROR: No services found in the compose file."
+    fi
+
+    # Filter for services that have a healthcheck defined
+    for service in $all_services; do
+        # Check the status of each service to find its container ID
+        container_id=$(docker compose -f "$compose_file" ps -q "$service" 2>/dev/null)
+        
+        # If the container exists, check for a healthcheck
+        if [ -n "$container_id" ]; then
+            # The 'docker inspect' command will return a non-empty value for .State.Health if a healthcheck is defined.
+            if [[ "$(docker inspect --format '{{.State.Health}}' "$container_id" 2>/dev/null)" != "<nil>" ]]; then
+                services_to_check+="$service "
+            fi
+        fi
+    done
+
+    # Trim leading/trailing whitespace
+    services_to_check=$(echo "$services_to_check" | xargs)
+    local total_services_to_check
+    total_services_to_check=$(echo "$services_to_check" | wc -w)
+
+    if [ "$total_services_to_check" -eq 0 ]; then
+        verbose "Warning: No services with healthchecks found to monitor."
+        return 0
+    fi
+
+    verbose "Waiting for $total_services_to_check services to become healthy..."
+
+    while true; do
+        healthy_services=0
+        for service in $services_to_check; do
+            status=$(docker compose -f "$compose_file" ps --format "{{.Status}}" "$service" 2>/dev/null)
+            
+            if [[ "$status" == *"healthy"* ]]; then
+                healthy_services=$((healthy_services + 1))
+            fi
+        done
+
+        verbose "Status: $healthy_services of $total_services_to_check containers are healthy."
+
+        if [ "$healthy_services" -ge "$total_services_to_check" ]; then
+            verbose "All monitored containers are now healthy."
+            return 0
+        fi
+
+        if (( $(date +%s) - start_time > timeout )); then
+            die "Error: Timeout reached. Not all containers are healthy."
+        fi
+
+        sleep 5
+    done
+}
+
+# Deploy the Docker services to create the containers,
+# recreating the Solr and app volumes first if --reset-solr
+# was passed to the script.
+docker_deploy() {
+    compose_file="${ARGS[TARGET_DIR]}/docker-compose.yml"
+    
+    if [ ! -f "$compose_file" ]; then
+        die "ERROR: could not locate $compose_file to deploy"
+    fi
+
+    if [[ "${ARGS[RESET_SOLR]}" -eq 1 ]]; then
+        verbose "Stopping 'solr' and 'app'"
+        if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+            if ! docker compose -f "$compose_file" down solr app; then
+                die "ERROR: Failed to stop 'solr' and 'app' containers"
+            fi
+        fi
+
+        verbose "Waiting for containers to be stopped"
+        if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+            wait_for_docker_containers_to_stop "$compose_file"
+        fi
+
+        verbose "Removing AS and Solr volumes"
+        if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+            if ! docker volume rm archivesspace_app-data archivesspace_solr-data; then
+                die "ERROR: Failed to remove archivesspace_app-data archivesspace_solr-data volumes"
+            fi
+        fi
+    fi
+
+    verbose "Pulling the docker images and deploying the compose file"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        verbose "-- Pulling docker images"
+        if ! docker compose -f "$compose_file" pull; then
+            die "ERROR: Failed to pre-pull images for the containers"
+        fi
+        verbose "-- Performing Docker deploy"
+        if ! docker compose -f "$compose_file" up -d --force-recreate; then
+            die "ERROR: Failed to deploy $compose_file"
+        fi
+    fi
+
+    verbose "Waiting for containers to be healthy"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        wait_for_docker_containers_to_be_healthy "$compose_file"
+    fi
+}
+
+# Update the docker-compose.yml file to enable SSL and update the healthcheck
+update_compose() {
+    verbose "Adding SSL cert volume to proxy service"
+    if ! yq eval '.services.proxy.volumes += "/etc/ssl:/ssl"' "${ARGS[TARGET_DIR]}/docker-compose.yml" -i; then
+        die "ERROR: failed to add SSL volume definition to the proxy service"
+    fi
+
+    verbose "Add SSL port to proxy service"
+    if ! yq eval '.services.proxy.ports += "443:443"' "${ARGS[TARGET_DIR]}/docker-compose.yml" -i; then
+        die "ERROR: failed to add SSL port definition to the proxy service"
+    fi
+    
+    verbose "Update healthcheck to check public page instead of api"
+    if ! yq eval '.services.app.healthcheck.test = ["CMD", "wget", "-q", "--spider", "http://localhost:8081/"]' "${ARGS[TARGET_DIR]}/docker-compose.yml" -i; then
+        die "ERROR: failed to add the healthcheck to the app service"
+    fi
+}
+
+# Entrypoint for the script
+main() {
+    verbose "Running Deploy with: AS_VERSION: ${ARGS[AS_VERSION]}, RESET_SOLR: ${ARGS[RESET_SOLR]}, TARGET_DIR: ${ARGS[TARGET_DIR]}, DRYRUN: ${ARGS[DRYRUN]}, SKIP_SETUP: ${ARGS[SKIP_SETUP]}"
+
+    if [[ "${ARGS[SKIP_SETUP]}" -eq 0 ]]; then
+        verbose "Ensuring ${ARGS[AS_VERSION]} is a valid format"
+        assert_valid_as_version
+        verbose "Done."
+
+        verbose "Ensuring dependencies are installed"
+        assert_dependencies_installed
+        verbose "Done."
+
+        # Create the target directory if it doesn't already exist
+        verbose "Ensuring ${ARGS[TARGET_DIR]} exists"
+        assert_target_dir_exists
+        verbose "Done."
+
+        # Get the Docker asset from GitHub
+        verbose "Downloading ${ARGS[AS_VERSION]} from GitHub"
+        download_release
+        verbose "Done."
+
+        # Extract the files to the target directory
+        verbose "Extracting release files to ${ARGS[TARGET_DIR]}"
+        extract_release
+        verbose "Done."
+
+        # Clone in the plugins
+        verbose "Cloning plugins to ${ARGS[TARGET_DIR]}/plugins"
+        clone_plugins
+        verbose "Done."
+
+        # Rsync the files from ./plugins ./config ./proxy-config
+        verbose "Syncing repo files to ${ARGS[TARGET_DIR]}"
+        sync_files
+        verbose "Done."
+
+        # Update the compose file
+        verbose "Update the docker compose file"
+        update_compose
+        verbose "Done."
+    fi
+
+    # Run the docker compose command
+    verbose "Updating Docker containers"
+    docker_deploy
+    verbose "Done."
+}
+
+# Parse and start running
+parse_args "$@"
+main

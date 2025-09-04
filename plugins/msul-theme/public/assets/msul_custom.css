@@ -1,0 +1,260 @@
+h1{
+    color:#18453b
+}
+.container,.container-fluid{
+    padding-left:0px !important;
+    padding-right:0px !important
+}
+.container {
+  max-width: none !important;
+}
+/* Fix left padding on search results page */
+#content .row {
+  padding-left: 30px;
+}
+#content .row .search-results .col-sm-12, #content .row .px-bs, #content .row .col-sm-9 {
+    padding-left: 0;
+}
+/* End */
+/* Fix content expanding past page width */
+.flex-grow-1 {
+  overflow-x: hidden;
+}
+/* Fix the "Filter Results" width */
+.filter_more form {
+  max-width: 90% !important;
+}
+.navbar{
+    border:1px solid #18453b;
+    border-radius:0px
+}
+.navbar-collapse{
+    background:#18453b !important;
+    border-color:#18453b
+}
+.navbar-default .navbar-nav li a{
+    color:#fff !important
+}
+.navbar-default .navbar-nav li a:hover{
+    color:#fff
+}
+.top-bar{
+    border:none
+}
+header .branding{
+    width:100%;
+}
+header .branding .msu-header-background{
+    background-image:url(/assets/images/msul-header.png);
+    background-position:center 0%;
+    background-size:cover
+}
+header .branding .msu-header-background .msu-header{
+    width:70%;
+    margin-left:auto;
+    margin-right:auto
+}
+header .branding .msu-header-background .msu-header .msu-branding-header-logo{
+    width:100%;
+    padding-top:10px
+}
+header .branding .msu-header-background .msu-header .headerSection{
+    height:100px;
+    display:inline-block;
+    width:100%
+}
+header .branding .msu-header-background .msu-header .headerSection .site-name-slogan{
+    float:left;
+    width:70%;
+    margin-top:20px
+}
+header .branding .msu-header-background .msu-header .headerSection .site-name-slogan .site-name{
+    display:inline-block;
+    width:220px;
+    padding-right:10px;
+    border-right:1px solid #ffffff
+}
+header .branding .msu-header-background .msu-header .headerSection .site-name-slogan .site-name a{
+    color:#ffffff !important;
+    text-decoration:none;
+    font-size:30px
+}
+header .branding .msu-header-background .msu-header .headerSection .site-name-slogan .site-slogan{
+    display:inline-block;
+    padding-left:5px
+}
+header .branding .msu-header-background .msu-header .headerSection .site-name-slogan .site-slogan a{
+    color:#ffffff !important;
+    text-decoration:none;
+    font-size:30px
+}
+header .branding .msu-header-background .msu-header .headerSection .toplinks{
+    float:right;
+    margin-top:30px
+}
+header .branding .msu-header-background .msu-header .headerSection .toplinks ul{
+    list-style-type:none
+}
+header .branding .msu-header-background .msu-header .headerSection .toplinks ul a{
+    color:#ffffff !important
+}
+.btn-primary,.btn-primary:hover{
+    background:#18453b
+}
+th.sortable a,.inset-label{
+    color:#18453b
+}
+icon-archival_object a{
+    font-size:14px
+}
+.result{
+    font-size:12px
+}
+.results-list .result:nth-child(2n){
+    background-color:#ffffff !important
+}
+.results-list .result{
+    border-bottom:1px solid #ffffff !important
+}
+a:hover{
+    color:#18453b
+}
+a{
+    color:#18453b
+}
+.badge-info{
+    background-color:#ffffff !important;
+    font-size:10px;
+    color:#444444
+}
+.facet{
+    list-style-type:none
+}
+.facet li a{
+    color:#107045;
+    text-decoration:none;
+    line-height:30px;
+    font-size:14px
+}
+h5{
+    font-size:20px;
+    color:#444444
+}
+#request_sub{
+    display:none
+}
+@media screen and (max-width: 800px){
+    .site-name a,.site-slogan a{
+        font-size:24px !important
+    }
+    .site-name{
+        width:160px !important
+    }
+}
+@media screen and (max-width: 630px){
+    .toplinks{
+        float:left;
+        margin-top:0px
+    }
+    .toplinks ul li{
+        display:inline;
+        border-right:1px solid #ffffff;
+        padding-right:2px
+    }
+    .toplinks ul li:last-child{
+        border-right:none
+    }
+    .site-name,.site-slogan{
+        border-right:none !important;
+        margin-top:0px;
+        margin-botton:20px;
+        line-height:20px
+    }
+    .site-name-slogan{
+        margin-top:20px !important
+    }
+    .headerSection{
+        height:150px !important
+    }
+}
+footer{
+    background-color:#3e4140;
+    margin-top:50px
+}
+.msu_footer_wrapper{
+    text-align:left !important;
+    width:1050px;
+    background-color:#3e4140
+}
+.msu-footer-lists{
+    float:right;
+    padding-top:10px;
+    padding-bottom:10px
+}
+.msu_footer_wordmark{
+    width:280px;
+    display:inline-block;
+    padding-top:20px;
+    padding-bottom:20px
+}
+.msu-footer-section1 ul,.msu-footer-section2 ul,.msu-footer-section3 ul{
+    margin:5px 0 5px 0px;
+    border-bottom:1px dotted #808080;
+    padding-left:0px
+}
+.msu-footer-section1 ul li,.msu-footer-section2 ul li,.msu-footer-section3 ul li{
+    display:inline;
+    border-right:1px solid #ffffff;
+    padding-right:2px;
+    color:#ffffff;
+    font-size:12px;
+    padding-right:5px
+}
+.msu-footer-section1 ul li:last-child,.msu-footer-section2 ul li:last-child,.msu-footer-section3 ul li:last-child{
+    border-right:none
+}
+.msu-footer-section1 ul li a{
+    color:#ffffff;
+    text-shadow:none;
+    font-size:15px
+}
+.msu_footer_green{
+    color:#81D300;
+    text-shadow:none
+}
+@media screen and (max-width: 850px){
+    .msu-footer-lists{
+        float:none
+    }
+    .msu_footer_wrapper{
+        width:65%
+    }
+}
+@media screen and (max-width: 470px){
+    .msu-footer-lists{
+        float:none
+    }
+    .msu_footer_wrapper{
+        width:85%
+    }
+    .msu-footer-section1 ul{
+        font-family:Metropolis, arial, sans-serif;
+        width:70%;
+        display:inline-block;
+        margin-left:30px;
+        text-align:-webkit-center
+    }
+    .msu-footer-section1 ul li{
+        font-size:14px
+    }
+    .msu-footer-section2 ul li,.msu-footer-section3 ul li{
+        font-size:10px;
+        display:block;
+        border-right:none
+    }
+    .msu-footer-section2 ul,.msu-footer-section3 ul{
+        margin:5px 0 5px 0px;
+        border-bottom:none
+    }
+}
+

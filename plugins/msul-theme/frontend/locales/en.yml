@@ -1,0 +1,9 @@
+en:
+    brand:
+        title: Archives and Manuscripts
+    actions:
+        search_header: Search archives and manuscripts
+    user_defined: &user_defined_attributes
+        real_1: Original Extent from AT
+        text_1: Custodial History from AT
+        date_2: Acquisition Date from AT
