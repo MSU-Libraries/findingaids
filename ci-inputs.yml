@@ -24,5 +24,3 @@ spec:
       description: "Prod server to deploy to"
     prod-encoded-key:
       description: "Base64 encoded private SSH key to connect to the prod deploy server with"
----
-
