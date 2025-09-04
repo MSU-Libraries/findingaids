@@ -11,13 +11,18 @@ of deployment provided by ArchivesSpace.
 * [Developer Notes](#developer-notes)
 * [Non-MSU Users of this Repository](#non-msu-users-of-this-repository)
 
-## TODO
-* Fix shellcheck issues in ./deploy
-
 ## First Time Setup
 
 Install Docker on the target server and create a deploy user and group
 that the CI user will be able to connect as.
+
+Install required dependencies:
+
+```bash
+sudo apt install rsync
+sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo chmod a+x /usr/local/bin/yq
+```
 
 Create a directory for the SSL certificates at `/etc/ssl`. The expected files are:
 
@@ -41,14 +46,6 @@ cp findingaids.key /etc/ssl/
 cp findingaids_lib_msu_edu_cert.cer /etc/ssl/
 ```
 
-Install required dependencies:
-
-```bash
-sudo apt install rsync
-sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-sudo chmod a+x /usr/local/bin/yq
-```
-
 Log rotation can be handled by Docker, if configured in the `/etc/docker/daemon.json`:
 
 ```bash
@@ -66,7 +63,7 @@ but if you are creating this from an existing environmnent you will need
 to populate the database (which will trigger the Solr index to be rebuilt).
 
 ```bash
-cat archivesspace.sql | docker exec mysql mysql -uas -pas123 archivesspace
+cat archivesspace.sql | docker exec -i mysql mysql -uas -pas123 archivesspace
 # Restart the docker containers to have the missing migrations applied
 sudo -Hu deploy /home/deploy/findingaids/deploy -v --skip-setup -a v4.1.1
 ```
