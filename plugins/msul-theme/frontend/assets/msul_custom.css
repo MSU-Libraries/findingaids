@@ -30,10 +30,6 @@ h1{
     border:1px solid #18453b;
     border-radius:0px
 }
-.navbar-collapse{
-    background:#18453b !important;
-    border-color:#18453b
-}
 .navbar-default .navbar-nav li a{
     color:#fff !important
 }
