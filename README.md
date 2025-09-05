@@ -213,6 +213,8 @@ to customize from this for yourselves if you fork this repository are:
   which plugins to install if you want to add/remove from that list. You could optionally change
   the default value for `TARGET_DIR` defined at the top of the script if you want to avoid having
   to pass that as a parameter.
+* Review the `sample.gitlab-ci.yml` as a starting point for making your own `.gitlab-ci.yml` file
+  to deploy to your environment.
 
 Please reach out if you have any questions or suggestions for improvement!
 

@@ -1,0 +1,78 @@
+# Expected CI Variables (one defined per environment as necessary)
+# ENCODED_PRIVATE_KEY: base64 encoded ssh private key used to connect
+#                      as the $DEPLOY_USER to the $SERVER
+# SERVER:              Hostname of the server to deploy to
+# AS_VERSION:          The version of ArchivevsSpace to install (ex: v4.1.1)
+# CONF_FILE:           The config/config.rb file contents
+# To use this, define the above CI variables and look for references to "example"
+# in this file and update the values to be relavent to your environment.
+
+stages:
+  - Deploy
+  - Reset
+
+default:
+  tags: [example-runner-tag]
+
+# These are global variables that can be defined here or in GitLab's CI/CD Settings
+# and have them apply to all environments  
+variables:
+  REPO_DIR: "/home/deploy/findingaids/"
+  DEPLOY_USER: "example-deploy-user"
+
+### DEVEL SERVER DEPLOY ###
+1 - Update Devel:
+  extends: .update_template
+  environment:
+    name: development
+
+1 - Reset & Update Devel:
+  extends: .reset_and_update_template
+  environment:
+    name: development
+
+### TEST SERVER DEPLOY ###
+## This section shows how you can easily duplicate the jobs to deploy
+## to another environment, simply change the environment name and job name
+2 - Update Test:
+  extends: .update_template
+  environment:
+    name: test
+
+2 - Reset & Update Test:
+  extends: .reset_and_update_template
+  environment:
+    name: test
+  
+### TEMPLATES ###
+.default_script: &default_script
+  - apk add rsync || apt install rsync
+  - '[ -n "$CONF_FILE" ] && echo "$CONF_FILE" > config/config.rb'
+  - rsync -aiv ./ $DEPLOY_USER@$SERVER:$REPO_DIR/
+
+.update_template:
+  stage: Deploy
+  extends: .setup_ssh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    - *default_script
+    - ssh $DEPLOY_USER@$SERVER "$REPO_DIR/deploy -a $AS_VERSION -v"
+
+.reset_and_update_template:
+  stage: Reset
+  needs: []
+  extends: .setup_ssh
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "schedule"'
+      when: manual
+  script:
+    - *default_script
+    - ssh $DEPLOY_USER@$SERVER "$REPO_DIR/deploy -a $AS_VERSION -v --reset-solr"
+
+# Provides the .setup_ssh template to setup the ssh key for connection to $SERVER
+# as $DEPLOY_USER using $ENCODED_PRIVATE_KEY
+include:
+  - remote: 'https://gitlab.msu.edu/msu-libraries/public/cicd-templates/-/raw/main/SSH.gitlab-ci.yml'
