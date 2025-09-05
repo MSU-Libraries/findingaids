@@ -25,6 +25,10 @@ h1{
   margin-right: 0px;
   margin-left: 0px;
 }
+/* Fix padding on navbar on record pages */
+#notes_row {
+  margin-left: 15px;
+}
 /* Fix the "Filter Results" width */
 .filter_more form {
   max-width: 90% !important;
