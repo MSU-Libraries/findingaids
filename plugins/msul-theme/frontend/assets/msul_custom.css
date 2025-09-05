@@ -8,17 +8,10 @@ h1{
 .container {
   max-width: none !important;
 }
-/* Fix left padding on search results page */
-#content .row {
-  padding-left: 30px;
-}
-#content .row .search-results .col-sm-12, #content .row .px-bs, #content .row .col-sm-9 {
-    padding-left: 0;
-}
-/* End */
 /* Fix content expanding past page width */
-.flex-grow-1 {
-  overflow-x: hidden;
+.row {
+  margin-right: 0px;
+  margin-left: 0px;
 }
 /* Fix the "Filter Results" width */
 .filter_more form {

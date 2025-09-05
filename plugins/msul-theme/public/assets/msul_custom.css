@@ -8,17 +8,22 @@ h1{
 .container {
   max-width: none !important;
 }
-/* Fix left padding on search results page */
-#content .row {
-  padding-left: 30px;
+/* Fix left padding on search results page and home page */
+#content .search h3, #content .col-sm-12 h2 {
+  padding-left: 15px;
 }
-#content .row .search-results .col-sm-12, #content .row .px-bs, #content .row .col-sm-9 {
-    padding-left: 0;
+/* fix action icons not displaying on right on acrhival_objects page */
+#info_row {
+  width: 100%;
 }
-/* End */
+/* Fix padding on top_containers page */
+#main-content .information {
+  padding-left: 15px;
+}
 /* Fix content expanding past page width */
-.flex-grow-1 {
-  overflow-x: hidden;
+.row {
+  margin-right: 0px;
+  margin-left: 0px;
 }
 /* Fix the "Filter Results" width */
 .filter_more form {
@@ -99,7 +104,7 @@ header .branding .msu-header-background .msu-header .headerSection .toplinks ul 
     color:#ffffff !important
 }
 .btn-primary,.btn-primary:hover{
-    background:#18453b
+    background:#18453b !important
 }
 th.sortable a,.inset-label{
     color:#18453b
