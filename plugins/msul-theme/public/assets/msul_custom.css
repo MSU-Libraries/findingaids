@@ -20,6 +20,10 @@ h1{
 #main-content .information {
   padding-left: 15px;
 }
+/* Fix padding on repository landing page */
+.repositories .abstract {
+  padding-left: 15px;
+}
 /* Fix content expanding past page width */
 .row {
   margin-right: 0px;
