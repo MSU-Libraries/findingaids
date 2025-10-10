@@ -58,6 +58,21 @@ Log rotation can be handled by Docker, if configured in the `/etc/docker/daemon.
 }
 ```
 
+But we should also add rotation for the database backups. Create this file `/etc/logrotate.d/findingaids`:
+
+```bash
+/home/deploy/archivesspace/backups/logrotate_dummy.log {
+  daily
+  rotate 0
+  create
+  ifempty
+  lastaction
+      /bin/ls -t /home/deploy/archivesspace/backups/db_backup_*.tgz 2>/dev/null | /usr/bin/tail -n +4 | /usr/bin/xargs -r /bin/rm -f
+  endscript
+}
+
+```
+
 Running the CI pipeline (or the `deploy` script) will create the environment,
 but if you are creating this from an existing environmnent you will need
 to populate the database (which will trigger the Solr index to be rebuilt).

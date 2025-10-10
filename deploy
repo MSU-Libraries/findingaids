@@ -193,6 +193,11 @@ extract_release() {
         rm "$tmp"
         rm -rf "$tmp_extract"
     fi
+
+    verbose "Making dummy file in backups dir for logrotate"
+    if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
+        touch "${ARGS[TARGET_DIR]}"/backups/logrotate_dummy.log
+    fi
 }
 
 # Clone or pull change to to a given repository
