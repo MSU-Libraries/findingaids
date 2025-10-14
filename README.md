@@ -90,6 +90,11 @@ can have unique values for these variables.
 
 * `AS_VERSION`: The version of ArchivesSpace to use, e.g. `v4.1.1`
 * `CONF_FILE`: The entire `config/config.rb` file to be used
+* `GITHUB_USER_TOKEN`: Used for the Release stage jobs to sync GitLab with GitHub.
+  It should be a fine-grained access token with read-write access to the target
+  repository in GitHub.
+* `RW_CICD_TOKEN`: Used for the Release stage jobs to create a GitLab tag and release.
+  It should be an access token in GitLab with read-write access to the repository and API.
 
 Create a deploy user that will have read-only access to the repository to 
 pull changes.  
@@ -176,7 +181,7 @@ services:
 Then redeploy the service:
 
 ```bash
-docker compose up --detach
+sudo -Hu deploy /home/deploy/findingaids/deploy -v --skip-setup -a v4.1.1
 ```
 
 Connect to the container and get a copy of the source code, make your modifications, then run it:
