@@ -182,7 +182,7 @@ extract_release() {
             rm -rf "$tmp_extract"
             die "ERROR: The 'archivesspace' subdirectory does not exist in the extracted files"
         fi
-        if ! rsync -aiv "$tmp_extract/archivesspace/" "${ARGS[TARGET_DIR]}"/; then
+        if ! rsync -aiv --delete "$tmp_extract/archivesspace/" "${ARGS[TARGET_DIR]}"/; then
             rm "$tmp"
             rm -rf "$tmp_extract"
             die "ERROR: Failed to rsync $tmp_extract/archivesspace/ to ${ARGS[TARGET_DIR]}/"
@@ -238,7 +238,7 @@ sync_files() {
     cur_dir=$(dirname "$(readlink -f "$0")")
     verbose "Syncing $cur_dir to ${ARGS[TARGET_DIR]}"
     if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
-        if ! rsync -aiv --include='plugins/***' --include='config/***' --include='proxy-config/***' --exclude='*'  "$cur_dir"/ "${ARGS[TARGET_DIR]}"/; then
+        if ! rsync -aiv --delete --include='plugins/' --include='plugins/***'  --include='config/' --include='config/***' --include='proxy-config/' --include='proxy-config/***' --exclude='*' "$cur_dir"/ "${ARGS[TARGET_DIR]}"/; then
             die "ERROR: Failed to rsync $cur_dir to ${ARGS[TARGET_DIR]}"
         fi
     fi
