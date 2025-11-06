@@ -238,7 +238,7 @@ sync_files() {
     cur_dir=$(dirname "$(readlink -f "$0")")
     verbose "Syncing $cur_dir to ${ARGS[TARGET_DIR]}"
     if [[ "${ARGS[DRYRUN]}" -eq 0 ]]; then
-        if ! rsync -aiv --delete --include='plugins/' --include='plugins/***'  --include='config/' --include='config/***' --include='proxy-config/' --include='proxy-config/***' --exclude='*' "$cur_dir"/ "${ARGS[TARGET_DIR]}"/; then
+        if ! rsync -aiv --delete --include='plugins/' --include='plugins/msul-theme/***'  --include='config/' --include='config/***' --include='proxy-config/' --include='proxy-config/***' --exclude='*' "$cur_dir"/ "${ARGS[TARGET_DIR]}"/; then
             die "ERROR: Failed to rsync $cur_dir to ${ARGS[TARGET_DIR]}"
         fi
     fi
